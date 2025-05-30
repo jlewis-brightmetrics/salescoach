@@ -436,9 +436,26 @@
         });
         
         function displayResults(data) {
-            // Display analysis
+            // Parse analysis if it's a JSON string
+            let analysis = typeof data.analysis === 'string' ? JSON.parse(data.analysis) : data.analysis;
+            
+            // Display token usage if available
+            if (analysis && analysis.token_usage) {
+                const usage = analysis.token_usage;
+                document.getElementById('inputTokens').textContent = usage.input_tokens.toLocaleString();
+                document.getElementById('outputTokens').textContent = usage.output_tokens.toLocaleString();
+                document.getElementById('totalTokens').textContent = usage.total_tokens.toLocaleString();
+                
+                const outputPercentage = ((usage.output_tokens / usage.max_tokens_limit) * 100).toFixed(1);
+                document.getElementById('outputUsage').textContent = outputPercentage + '%';
+                
+                document.getElementById('tokenUsage').style.display = 'block';
+            }
+            
+            // Display analysis (remove token_usage from display)
+            const displayAnalysis = typeof data.analysis === 'string' ? data.analysis : JSON.stringify(analysis, null, 2);
             document.getElementById('analysisContent').innerHTML = 
-                data.analysis.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                displayAnalysis.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
             
             // Display annotated transcript
             let annotatedHtml = data.annotated_transcript
