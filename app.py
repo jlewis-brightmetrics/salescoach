@@ -114,21 +114,29 @@ class SalescoachAnalyzer:
     def annotate_transcript(self, transcript):
         """Add coaching annotations throughout the transcript"""
         prompt = f"""
-        Please review this sales call transcript and add coaching annotations throughout. 
-        Format your response as the original transcript with coaching notes in [COACH: ...] format inserted at relevant points.
+        Please review this sales call transcript and add COMPREHENSIVE coaching annotations throughout. 
+        Format your response as the original transcript with detailed coaching notes in [COACH: ...] format inserted at relevant points.
+        
+        IMPORTANT: Provide extensive, detailed coaching feedback. Add annotations after EVERY significant exchange, question, response, or moment in the conversation. Be thorough and comprehensive - use the full response capacity available.
         
         Focus on:
-        - Missed opportunities
-        - Good techniques used
-        - Questions that could be improved
-        - Objection handling
-        - Closing opportunities
-        - Rapport building moments
+        - Missed opportunities (explain what could have been done differently)
+        - Good techniques used (explain why they were effective)
+        - Questions that could be improved (provide better alternatives)
+        - Objection handling (rate performance and suggest improvements)
+        - Closing opportunities (identify and explain each one)
+        - Rapport building moments (analyze effectiveness)
+        - Body language cues mentioned
+        - Tone and communication style
+        - Sales methodology adherence
+        - Follow-up opportunities
+        - Pricing and negotiation tactics
+        - Customer pain points and how they were addressed
         
         Transcript:
         {transcript}
         
-        Return the transcript with coaching annotations inserted at appropriate points.
+        Return the COMPLETE transcript with DETAILED coaching annotations inserted throughout. Make sure to annotate the entire conversation from start to finish with comprehensive feedback.
         """
         
         try:
