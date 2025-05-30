@@ -85,7 +85,7 @@ class SalescoachAnalyzer:
         
         try:
             response = self.client.chat.completions.create(
-                model="gpt-3.5-turbo-16k",
+                model="gpt-4-turbo-preview",
                 messages=[
                     {"role": "system", "content": "You are an expert sales coach with 20+ years of experience training top sales representatives."},
                     {"role": "user", "content": prompt}
