@@ -20,7 +20,7 @@ anthropic_api_key = os.getenv('ANTHROPIC_API_KEY')
 
 # Configure upload settings
 UPLOAD_FOLDER = 'uploads'
-ALLOWED_EXTENSIONS = {'txt', 'csv', 'md'}
+ALLOWED_EXTENSIONS = {'txt', 'csv', 'md', 'vtt'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
@@ -58,6 +58,29 @@ def clear_session_data():
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def parse_vtt_file(content):
+    """Parse VTT file content and extract clean transcript text"""
+    lines = content.split('\n')
+    transcript_lines = []
+    
+    for line in lines:
+        line = line.strip()
+        
+        # Skip empty lines, WEBVTT header, timestamps, and cue numbers
+        if (not line or 
+            line == 'WEBVTT' or 
+            line.isdigit() or 
+            '-->' in line or
+            line.startswith('NOTE')):
+            continue
+            
+        # This should be transcript text
+        if line:
+            transcript_lines.append(line)
+    
+    # Join all transcript lines with proper spacing
+    return '\n'.join(transcript_lines)
 
 class SalescoachAnalyzer:
     def __init__(self):
@@ -276,14 +299,20 @@ def upload_file():
             
             # Read the file content
             with open(filepath, 'r', encoding='utf-8') as f:
-                transcript = f.read()
+                content = f.read()
+            
+            # Process based on file type
+            if filename.lower().endswith('.vtt'):
+                transcript = parse_vtt_file(content)
+            else:
+                transcript = content
             
             # Clean up the uploaded file
             os.remove(filepath)
             
             return jsonify({'transcript': transcript})
         
-        return jsonify({'error': 'Invalid file type. Please upload .txt, .csv, or .md files'}), 400
+        return jsonify({'error': 'Invalid file type. Please upload .txt, .csv, .md, or .vtt files'}), 400
     
     except Exception as e:
         print(f"❌ Error in upload: {str(e)}")
