@@ -48,30 +48,32 @@ class SalesAnalyzer:
     def analyze_transcript(self, transcript: str) -> Optional[Dict]:
         """Analyze sales transcript using OpenAI API."""
         try:
-            system_prompt = """You are an expert sales coach and analyst. Analyze the provided sales call transcript and provide detailed insights in JSON format.
+            system_prompt = """You are an expert sales coach and analyst. Analyze the provided sales call transcript and provide detailed coaching feedback.
 
 Your analysis should include:
-1. summary: A concise summary of the key points discussed
-2. topics: List of main topics covered in the conversation
-3. sentiment: Object with overall customer sentiment, confidence score (0-1), and explanation
-4. objections: List of customer objections with type, concern, and suggested responses
-5. action_items: List of next steps with task, priority (High/Medium/Low), and timeline
-6. performance: Object with talk_ratio, question_quality, overall_score, insights, and recommendations
+1. **Overall Performance Assessment** - A summary of how the sales rep performed
+2. **Strengths Demonstrated** - What the rep did well
+3. **Areas for Improvement** - Specific areas that need work
+4. **Objection Handling Analysis** - How objections were addressed
+5. **Questioning Technique Evaluation** - Quality of questions asked
+6. **Closing Opportunities** - Moments where closing could have been attempted
+7. **Specific Coaching Recommendations** - Actionable advice
+8. **Next Steps and Follow-up Strategy** - What should happen next
 
-Provide actionable insights that will help improve sales performance."""
+Provide detailed, actionable insights that will help improve sales performance."""
 
-            user_prompt = f"""Please analyze this sales call transcript and provide insights in JSON format:
+            user_prompt = f"""Please analyze this sales call transcript and provide comprehensive coaching feedback:
 
 {transcript}
 
 Focus on:
-- Customer needs and pain points
-- Sales rep performance
-- Objections and how they were handled
-- Opportunities for improvement
-- Clear next steps
+- Customer needs and pain points identified
+- Sales rep performance and technique
+- How objections were handled
+- Missed opportunities for improvement
+- Clear recommendations for next steps
 
-Respond with valid JSON only."""
+Provide a detailed analysis with specific examples from the conversation."""
 
             response = self.client.chat.completions.create(
                 model=self.model,
@@ -79,14 +81,17 @@ Respond with valid JSON only."""
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
-                response_format={"type": "json_object"},
                 temperature=0.3,
-                max_tokens=100000
+                max_tokens=10000
             )
             
-            result = json.loads(response.choices[0].message.content)
+            content = response.choices[0].message.content
             
-            # Add token usage information to the result
+            # Return content with token usage information
+            result = {
+                'content': content
+            }
+            
             if hasattr(response, 'usage') and response.usage:
                 result['token_usage'] = {
                     'input_tokens': response.usage.prompt_tokens,
