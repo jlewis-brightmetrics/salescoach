@@ -85,7 +85,7 @@ class SalescoachAnalyzer:
         
         try:
             model_name = "gpt-4-0125-preview"
-            print(f"🤖 Using model: {model_name} with max_tokens: 10000")
+            print(f"🤖 Using model: {model_name} with max_tokens: 4096")
             
             response = self.client.chat.completions.create(
                 model=model_name,
@@ -93,7 +93,7 @@ class SalescoachAnalyzer:
                     {"role": "system", "content": "You are an expert sales coach with 20+ years of experience training top sales representatives."},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=10000,
+                max_tokens=4096,
                 temperature=0.7
             )
             
@@ -104,7 +104,7 @@ class SalescoachAnalyzer:
                     'input_tokens': response.usage.prompt_tokens,
                     'output_tokens': response.usage.completion_tokens,
                     'total_tokens': response.usage.total_tokens,
-                    'max_tokens_limit': 10000
+                    'max_tokens_limit': 4096
                 }
             }
             return result
