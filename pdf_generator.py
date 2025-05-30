@@ -107,79 +107,52 @@ class SalesCoachPDFGenerator:
         return text
     
     def parse_analysis_content(self, analysis_text):
-        """Parse analysis content into structured sections"""
+        """Parse analysis content to exactly match app display"""
+        # For exact matching, let's use a simpler approach that preserves all content
+        # Split by markdown headers while keeping everything
+        
         sections = []
-        
-        # More comprehensive section patterns to catch various formats
-        section_patterns = [
-            r'^##\s*(.*?)$',           # ## Section Header
-            r'^###\s*(.*?)$',          # ### Subsection Header  
-            r'^\*\*(.*?):\*\*',        # **Section:**
-            r'^(\d+\.)\s*(.*?)$',      # 1. Numbered sections
-            r'^[A-Z][A-Z\s]+:$',       # ALL CAPS HEADERS:
-            r'^[A-Z].*?:$'             # Title Case Headers:
-        ]
-        
+        lines = analysis_text.split('\n')
         current_section = None
         current_content = []
         
-        lines = analysis_text.split('\n')
-        
         for line in lines:
-            original_line = line
-            line = line.strip()
+            stripped_line = line.strip()
             
-            # Keep empty lines for spacing
-            if not line:
-                if current_content or current_section:
-                    current_content.append('')
-                continue
+            # Check for markdown headers (## Section)
+            if stripped_line.startswith('## '):
+                # Save previous section
+                if current_section is not None:
+                    sections.append({
+                        'title': current_section,
+                        'content': '\n'.join(current_content).strip()
+                    })
                 
-            # Check if this is a section header
-            is_header = False
-            for pattern in section_patterns:
-                match = re.match(pattern, line)
-                if match:
-                    # Save previous section if it exists
-                    if current_section and (current_content or not sections):
-                        sections.append({
-                            'title': current_section,
-                            'content': '\n'.join(current_content).strip()
-                        })
-                    
-                    # Extract section title
-                    if len(match.groups()) >= 1 and match.group(1):
-                        current_section = match.group(1).strip()
-                    else:
-                        current_section = line.strip()
-                    
-                    # Clean up section title
-                    current_section = re.sub(r'\*\*', '', current_section)  # Remove markdown bold
-                    current_section = re.sub(r':$', '', current_section)    # Remove trailing colon
-                    
-                    current_content = []
-                    is_header = True
-                    break
-            
-            if not is_header:
-                current_content.append(original_line)
+                # Start new section
+                current_section = stripped_line[3:].strip()  # Remove '## '
+                current_content = []
+            else:
+                # Add to current section content
+                current_content.append(line)
         
-        # Add the last section
-        if current_section and current_content:
+        # Add the final section
+        if current_section is not None:
             sections.append({
                 'title': current_section,
                 'content': '\n'.join(current_content).strip()
             })
         
-        # If no sections found or sections are empty, treat entire text as one section
-        if not sections or all(not section['content'].strip() for section in sections):
+        # If no markdown sections found, use the entire content as one section
+        if not sections:
             sections = [{
-                'title': 'Complete Analysis Results',
+                'title': 'Analysis Results',
                 'content': analysis_text.strip()
             }]
         
-        # Filter out empty sections
-        sections = [section for section in sections if section['content'].strip()]
+        # Debug output to track parsing
+        print(f"📄 Total sections found: {len(sections)}")
+        for i, section in enumerate(sections):
+            print(f"📄 Section {i+1}: '{section['title']}' ({len(section['content'])} chars)")
         
         return sections
     
