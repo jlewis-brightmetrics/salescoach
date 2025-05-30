@@ -110,12 +110,14 @@ class SalesCoachPDFGenerator:
         """Parse analysis content into structured sections"""
         sections = []
         
-        # Split by common section headers
+        # More comprehensive section patterns to catch various formats
         section_patterns = [
-            r'##\s*(.*?)\n',
-            r'\*\*(.*?):\*\*',
-            r'(\d+\.)\s*(.*?)\n',
-            r'###\s*(.*?)\n'
+            r'^##\s*(.*?)$',           # ## Section Header
+            r'^###\s*(.*?)$',          # ### Subsection Header  
+            r'^\*\*(.*?):\*\*',        # **Section:**
+            r'^(\d+\.)\s*(.*?)$',      # 1. Numbered sections
+            r'^[A-Z][A-Z\s]+:$',       # ALL CAPS HEADERS:
+            r'^[A-Z].*?:$'             # Title Case Headers:
         ]
         
         current_section = None
@@ -124,8 +126,13 @@ class SalesCoachPDFGenerator:
         lines = analysis_text.split('\n')
         
         for line in lines:
+            original_line = line
             line = line.strip()
+            
+            # Keep empty lines for spacing
             if not line:
+                if current_content or current_section:
+                    current_content.append('')
                 continue
                 
             # Check if this is a section header
@@ -133,34 +140,46 @@ class SalesCoachPDFGenerator:
             for pattern in section_patterns:
                 match = re.match(pattern, line)
                 if match:
-                    # Save previous section
-                    if current_section:
+                    # Save previous section if it exists
+                    if current_section and (current_content or not sections):
                         sections.append({
                             'title': current_section,
-                            'content': '\n'.join(current_content)
+                            'content': '\n'.join(current_content).strip()
                         })
                     
-                    current_section = match.group(1) if len(match.groups()) >= 1 else line
+                    # Extract section title
+                    if len(match.groups()) >= 1 and match.group(1):
+                        current_section = match.group(1).strip()
+                    else:
+                        current_section = line.strip()
+                    
+                    # Clean up section title
+                    current_section = re.sub(r'\*\*', '', current_section)  # Remove markdown bold
+                    current_section = re.sub(r':$', '', current_section)    # Remove trailing colon
+                    
                     current_content = []
                     is_header = True
                     break
             
             if not is_header:
-                current_content.append(line)
+                current_content.append(original_line)
         
         # Add the last section
-        if current_section:
+        if current_section and current_content:
             sections.append({
                 'title': current_section,
-                'content': '\n'.join(current_content)
+                'content': '\n'.join(current_content).strip()
             })
         
-        # If no sections found, treat entire text as one section
-        if not sections:
-            sections.append({
-                'title': 'Analysis Results',
-                'content': analysis_text
-            })
+        # If no sections found or sections are empty, treat entire text as one section
+        if not sections or all(not section['content'].strip() for section in sections):
+            sections = [{
+                'title': 'Complete Analysis Results',
+                'content': analysis_text.strip()
+            }]
+        
+        # Filter out empty sections
+        sections = [section for section in sections if section['content'].strip()]
         
         return sections
     
@@ -246,14 +265,30 @@ class SalesCoachPDFGenerator:
         story.append(Paragraph("Detailed Analysis Results", self.styles['SectionHeader']))
         
         # Parse and format analysis content
-        analysis_sections = self.parse_analysis_content(analysis_content)
+        print(f"📄 Raw analysis content length: {len(analysis_content)}")
+        print(f"📄 First 200 chars: {analysis_content[:200]}")
         
-        for section in analysis_sections:
+        analysis_sections = self.parse_analysis_content(analysis_content)
+        print(f"📄 Parsed into {len(analysis_sections)} sections")
+        
+        for i, section in enumerate(analysis_sections):
+            print(f"📄 Section {i+1}: '{section['title']}' - Content length: {len(section['content'])}")
+            
             if section['title'] and section['title'] != 'Analysis Results':
                 story.append(Paragraph(section['title'], self.styles['SubSection']))
             
             clean_content = self.clean_text_for_pdf(section['content'])
-            story.append(Paragraph(clean_content, self.styles['AnalysisContent']))
+            
+            # If content is very long, split it into multiple paragraphs for better PDF handling
+            if len(clean_content) > 3000:
+                content_parts = clean_content.split('<br/><br/>')
+                for part in content_parts:
+                    if part.strip():
+                        story.append(Paragraph(part.strip(), self.styles['AnalysisContent']))
+                        story.append(Spacer(1, 6))
+            else:
+                story.append(Paragraph(clean_content, self.styles['AnalysisContent']))
+            
             story.append(Spacer(1, 12))
         
         # Page break before annotated transcript
