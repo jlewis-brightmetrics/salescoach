@@ -114,29 +114,24 @@ class SalescoachAnalyzer:
     def annotate_transcript(self, transcript):
         """Add coaching annotations throughout the transcript"""
         prompt = f"""
-        Please review this sales call transcript and add COMPREHENSIVE coaching annotations throughout. 
-        Format your response as the original transcript with detailed coaching notes in [COACH: ...] format inserted at relevant points.
+        You are a sales coach reviewing a call transcript. Your task is to provide the COMPLETE original transcript with coaching annotations inserted throughout.
         
-        IMPORTANT: Provide extensive, detailed coaching feedback. Add annotations after EVERY significant exchange, question, response, or moment in the conversation. Be thorough and comprehensive - use the full response capacity available.
+        CRITICAL: You must include the ENTIRE transcript from beginning to end with coaching notes. Do not summarize or truncate any part of the conversation.
         
-        Focus on:
-        - Missed opportunities (explain what could have been done differently)
-        - Good techniques used (explain why they were effective)
-        - Questions that could be improved (provide better alternatives)
-        - Objection handling (rate performance and suggest improvements)
-        - Closing opportunities (identify and explain each one)
-        - Rapport building moments (analyze effectiveness)
-        - Body language cues mentioned
-        - Tone and communication style
-        - Sales methodology adherence
-        - Follow-up opportunities
-        - Pricing and negotiation tactics
-        - Customer pain points and how they were addressed
+        Format: Insert coaching feedback in [COACH: ...] format after key moments, but ensure you reproduce the complete original transcript.
         
-        Transcript:
+        Add coaching notes for:
+        - Opening techniques
+        - Rapport building
+        - Discovery questions
+        - Objection handling
+        - Closing attempts
+        - Missed opportunities
+        
+        Transcript to annotate:
         {transcript}
         
-        Return the COMPLETE transcript with DETAILED coaching annotations inserted throughout. Make sure to annotate the entire conversation from start to finish with comprehensive feedback.
+        IMPORTANT: Output the full transcript with annotations. Continue until you have covered the entire conversation from start to finish.
         """
         
         try:
