@@ -133,12 +133,12 @@ class SalescoachAnalyzer:
         
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4-1106-preview",
+                model="gpt-4-0125-preview",
                 messages=[
                     {"role": "system", "content": "You are a sales coach providing inline feedback on a sales call transcript."},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=2000,
+                max_tokens=4096,
                 temperature=0.7
             )
             return response.choices[0].message.content
@@ -163,12 +163,12 @@ class SalescoachAnalyzer:
         
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4-1106-preview",
+                model="gpt-4-0125-preview",
                 messages=[
                     {"role": "system", "content": "You are an expert sales coach answering questions about a sales call analysis."},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=800,
+                max_tokens=4096,
                 temperature=0.7
             )
             return response.choices[0].message.content
