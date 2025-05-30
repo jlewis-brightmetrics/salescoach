@@ -85,15 +85,26 @@ class SalescoachAnalyzer:
         
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4-1106-preview",
+                model="gpt-4o",
                 messages=[
                     {"role": "system", "content": "You are an expert sales coach with 20+ years of experience training top sales representatives."},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=1500,
+                max_tokens=10000,
                 temperature=0.7
             )
-            return response.choices[0].message.content
+            
+            # Create result with token usage
+            result = {
+                'content': response.choices[0].message.content,
+                'token_usage': {
+                    'input_tokens': response.usage.prompt_tokens,
+                    'output_tokens': response.usage.completion_tokens,
+                    'total_tokens': response.usage.total_tokens,
+                    'max_tokens_limit': 10000
+                }
+            }
+            return result
         except Exception as e:
             return f"Error analyzing transcript: {str(e)}"
     
@@ -195,18 +206,27 @@ def analyze():
         
         # Analyze the transcript
         print("🔄 Analyzing transcript...")
-        analysis = analyzer.analyze_transcript(transcript)
+        analysis_result = analyzer.analyze_transcript(transcript)
         annotated_transcript = analyzer.annotate_transcript(transcript)
         
+        # Handle the new return format with token usage
+        if isinstance(analysis_result, dict) and 'content' in analysis_result:
+            analysis_content = analysis_result['content']
+            token_usage = analysis_result.get('token_usage', {})
+        else:
+            analysis_content = str(analysis_result)
+            token_usage = {}
+        
         # Store analysis in session store
-        set_session_data('analysis', analysis)
+        set_session_data('analysis', analysis_content)
         set_session_data('annotated_transcript', annotated_transcript)
         
         print("✅ Analysis completed successfully")
         
         return jsonify({
-            'analysis': analysis,
-            'annotated_transcript': annotated_transcript
+            'analysis': analysis_content,
+            'annotated_transcript': annotated_transcript,
+            'token_usage': token_usage
         })
     
     except Exception as e:
