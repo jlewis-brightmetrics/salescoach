@@ -63,7 +63,7 @@ class SalescoachAnalyzer:
         api_key = os.getenv('ANTHROPIC_API_KEY')
         if not api_key:
             raise ValueError("ANTHROPIC_API_KEY environment variable is required")
-        # the newest Anthropic model is "claude-3-5-sonnet-20241022" which was released October 22, 2024
+        # Using Claude Sonnet 4 - the latest model
         self.client = anthropic.Anthropic(api_key=api_key)
     
     def analyze_transcript(self, transcript):
@@ -85,8 +85,7 @@ class SalescoachAnalyzer:
         """
         
         try:
-            # the newest Anthropic model is "claude-3-5-sonnet-20241022" which was released October 22, 2024
-            model_name = "claude-3-5-sonnet-20241022"
+            model_name = "claude-sonnet-4-20250514"
             print(f"🤖 Using model: {model_name} with max_tokens: 10000")
             
             message = self.client.messages.create(
@@ -137,10 +136,9 @@ class SalescoachAnalyzer:
         """
         
         try:
-            # the newest Anthropic model is "claude-3-5-sonnet-20241022" which was released October 22, 2024
-            print(f"🔄 Annotating transcript with model: claude-3-5-sonnet-20241022, max_tokens: 10000")
+            print(f"🔄 Annotating transcript with model: claude-sonnet-4-20250514, max_tokens: 10000")
             message = self.client.messages.create(
-                model="claude-3-5-sonnet-20241022",
+                model="claude-sonnet-4-20250514",
                 max_tokens=10000,
                 temperature=0.7,
                 system="You are a sales coach providing inline feedback on a sales call transcript.",
@@ -202,7 +200,7 @@ def index():
 def analyze():
     try:
         if not analyzer:
-            return jsonify({'error': 'OpenAI API key not configured. Please set OPENAI_API_KEY environment variable.'}), 500
+            return jsonify({'error': 'Claude API key not configured. Please set ANTHROPIC_API_KEY environment variable.'}), 500
             
         data = request.get_json()
         transcript = data.get('transcript', '').strip()
@@ -285,7 +283,7 @@ def upload_file():
 def chat():
     try:
         if not analyzer:
-            return jsonify({'error': 'OpenAI API key not configured. Please set OPENAI_API_KEY environment variable.'}), 500
+            return jsonify({'error': 'Claude API key not configured. Please set ANTHROPIC_API_KEY environment variable.'}), 500
             
         data = request.get_json()
         question = data.get('question', '').strip()
@@ -319,7 +317,7 @@ def health_check():
     return jsonify({
         'status': 'healthy',
         'analyzer_ready': analyzer is not None,
-        'api_configured': bool(os.getenv('OPENAI_API_KEY'))
+        'api_configured': bool(os.getenv('ANTHROPIC_API_KEY'))
     })
 
 if __name__ == '__main__':
