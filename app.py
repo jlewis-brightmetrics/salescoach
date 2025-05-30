@@ -86,11 +86,11 @@ class SalescoachAnalyzer:
         
         try:
             model_name = "claude-sonnet-4-20250514"
-            print(f"🤖 Using model: {model_name} with max_tokens: 10000")
+            print(f"🤖 Using model: {model_name} with max_tokens: 20000")
             
             message = self.client.messages.create(
                 model=model_name,
-                max_tokens=10000,
+                max_tokens=20000,
                 temperature=0.7,
                 system="You are an expert sales coach with 20+ years of experience training top sales representatives.",
                 messages=[
@@ -105,7 +105,7 @@ class SalescoachAnalyzer:
                     'input_tokens': message.usage.input_tokens,
                     'output_tokens': message.usage.output_tokens,
                     'total_tokens': message.usage.input_tokens + message.usage.output_tokens,
-                    'max_tokens_limit': 10000
+                    'max_tokens_limit': 20000
                 }
             }
             return result
@@ -117,9 +117,13 @@ class SalescoachAnalyzer:
         prompt = f"""
         You are a sales coach reviewing a call transcript. Your task is to provide the COMPLETE original transcript with coaching annotations inserted throughout.
         
-        CRITICAL: You must include the ENTIRE transcript from beginning to end with coaching notes. Do not summarize or truncate any part of the conversation.
+        CRITICAL INSTRUCTIONS:
+        1. You MUST include the ENTIRE transcript from beginning to end
+        2. Do NOT summarize, truncate, or skip any part of the conversation
+        3. Continue annotating until you reach the very end of the transcript
+        4. If you approach token limits, prioritize including the complete transcript over detailed annotations
         
-        Format: Insert coaching feedback in [COACH: ...] format after key moments, but ensure you reproduce the complete original transcript.
+        Format: Insert coaching feedback in [COACH: ...] format after key moments, but ensure you reproduce the complete original transcript word-for-word.
         
         Add coaching notes for:
         - Opening techniques
@@ -132,14 +136,14 @@ class SalescoachAnalyzer:
         Transcript to annotate:
         {transcript}
         
-        IMPORTANT: Output the full transcript with annotations. Continue until you have covered the entire conversation from start to finish.
+        IMPORTANT: Output the full transcript with annotations. Continue until you have covered the entire conversation from start to finish. Do not stop early.
         """
         
         try:
-            print(f"🔄 Annotating transcript with model: claude-sonnet-4-20250514, max_tokens: 10000")
+            print(f"🔄 Annotating transcript with model: claude-sonnet-4-20250514, max_tokens: 20000")
             message = self.client.messages.create(
                 model="claude-sonnet-4-20250514",
-                max_tokens=10000,
+                max_tokens=20000,
                 temperature=0.7,
                 system="You are a sales coach providing inline feedback on a sales call transcript.",
                 messages=[
@@ -170,10 +174,9 @@ class SalescoachAnalyzer:
         """
         
         try:
-            # the newest Anthropic model is "claude-3-5-sonnet-20241022" which was released October 22, 2024
             message = self.client.messages.create(
-                model="claude-3-5-sonnet-20241022",
-                max_tokens=10000,
+                model="claude-sonnet-4-20250514",
+                max_tokens=20000,
                 temperature=0.7,
                 system="You are an expert sales coach answering questions about a sales call analysis.",
                 messages=[
@@ -209,7 +212,7 @@ def analyze():
             return jsonify({'error': 'No transcript provided'}), 400
         
         # Check transcript length and truncate if too long
-        max_length = 8000  # Approximate character limit to stay under token limits
+        max_length = 50000  # Increased limit for Claude Sonnet 4 - roughly 12,500 tokens
         if len(transcript) > max_length:
             transcript = transcript[:max_length] + "\n\n[Note: Transcript truncated due to length]"
         
