@@ -108,9 +108,9 @@ class SalescoachAnalyzer:
                     'max_tokens_limit': 20000
                 }
             }
-            return result
+            return result, prompt
         except Exception as e:
-            return f"Error analyzing transcript: {str(e)}"
+            return f"Error analyzing transcript: {str(e)}", prompt
     
     def annotate_transcript(self, transcript):
         """Add coaching annotations throughout the transcript"""
@@ -153,9 +153,9 @@ class SalescoachAnalyzer:
             print(f"📊 Annotation tokens - Input: {message.usage.input_tokens}, Output: {message.usage.output_tokens}, Total: {message.usage.input_tokens + message.usage.output_tokens}")
             result = message.content[0].text
             print(f"📝 Annotation result length: {len(result)} characters")
-            return result
+            return result, prompt
         except Exception as e:
-            return f"Error annotating transcript: {str(e)}"
+            return f"Error annotating transcript: {str(e)}", prompt
     
     def chat_about_analysis(self, question, transcript, previous_analysis):
         """Handle conversational questions about the transcript or analysis"""
@@ -183,9 +183,9 @@ class SalescoachAnalyzer:
                     {"role": "user", "content": prompt}
                 ]
             )
-            return message.content[0].text
+            return message.content[0].text, prompt
         except Exception as e:
-            return f"Error processing question: {str(e)}"
+            return f"Error processing question: {str(e)}", prompt
 
 # Initialize the analyzer (with error handling)
 try:
@@ -221,8 +221,8 @@ def analyze():
         
         # Analyze the transcript
         print("🔄 Analyzing transcript...")
-        analysis_result = analyzer.analyze_transcript(transcript)
-        annotated_transcript = analyzer.annotate_transcript(transcript)
+        analysis_result, analysis_prompt = analyzer.analyze_transcript(transcript)
+        annotated_transcript, annotation_prompt = analyzer.annotate_transcript(transcript)
         
         # Handle the new return format with token usage
         if isinstance(analysis_result, dict) and 'content' in analysis_result:
@@ -232,9 +232,11 @@ def analyze():
             analysis_content = str(analysis_result)
             token_usage = {}
         
-        # Store analysis in session store
+        # Store analysis and prompts in session store
         set_session_data('analysis', analysis_content)
         set_session_data('annotated_transcript', annotated_transcript)
+        set_session_data('analysis_prompt', analysis_prompt)
+        set_session_data('annotation_prompt', annotation_prompt)
         
         print("✅ Analysis completed successfully")
         print(f"📤 Sending annotated transcript length: {len(annotated_transcript)} characters")
@@ -243,7 +245,11 @@ def analyze():
         return jsonify({
             'analysis': analysis_content,
             'annotated_transcript': annotated_transcript,
-            'token_usage': token_usage
+            'token_usage': token_usage,
+            'prompts': {
+                'analysis': analysis_prompt,
+                'annotation': annotation_prompt
+            }
         })
     
     except Exception as e:
@@ -301,9 +307,15 @@ def chat():
             return jsonify({'error': 'No previous analysis found. Please analyze a transcript first.'}), 400
         
         print(f"🔄 Processing chat question: {question[:50]}...")
-        response = analyzer.chat_about_analysis(question, transcript, analysis)
+        response, chat_prompt = analyzer.chat_about_analysis(question, transcript, analysis)
         
-        return jsonify({'response': response})
+        # Store the chat prompt in session for the Prompts tab
+        set_session_data('last_chat_prompt', chat_prompt)
+        
+        return jsonify({
+            'response': response,
+            'chat_prompt': chat_prompt
+        })
     
     except Exception as e:
         print(f"❌ Error in chat: {str(e)}")

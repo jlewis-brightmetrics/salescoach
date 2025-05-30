@@ -220,6 +220,11 @@
                             <i class="fas fa-comments"></i> Ask Questions
                         </button>
                     </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="prompt-tab" data-bs-toggle="tab" data-bs-target="#prompt" type="button" role="tab">
+                            <i class="fas fa-code"></i> Prompts
+                        </button>
+                    </li>
                 </ul>
                 
                 <div class="tab-content" id="mainTabContent">
@@ -327,6 +332,44 @@
                                     <button class="btn btn-primary" id="chatSendBtn" disabled>
                                         <i class="fas fa-paper-plane"></i> Send
                                     </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Prompts Tab -->
+                    <div class="tab-pane fade" id="prompt" role="tabpanel">
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <h3><i class="fas fa-code"></i> AI Prompts</h3>
+                                <p class="text-muted">View the prompts sent to Claude API for analysis and coaching feedback.</p>
+                                
+                                <div id="promptContent" style="display: none;">
+                                    <div class="analysis-section">
+                                        <h4><i class="fas fa-brain"></i> Analysis Prompt</h4>
+                                        <div class="bg-light p-3 rounded">
+                                            <pre id="analysisPrompt" style="white-space: pre-wrap; font-family: 'Monaco', 'Consolas', monospace; font-size: 0.85rem;"></pre>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="analysis-section">
+                                        <h4><i class="fas fa-pen"></i> Annotation Prompt</h4>
+                                        <div class="bg-light p-3 rounded">
+                                            <pre id="annotationPrompt" style="white-space: pre-wrap; font-family: 'Monaco', 'Consolas', monospace; font-size: 0.85rem;"></pre>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="analysis-section" id="chatPromptSection" style="display: none;">
+                                        <h4><i class="fas fa-comments"></i> Chat Prompt</h4>
+                                        <div class="bg-light p-3 rounded">
+                                            <pre id="chatPrompt" style="white-space: pre-wrap; font-family: 'Monaco', 'Consolas', monospace; font-size: 0.85rem;"></pre>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div id="noPromptsMessage" class="text-center text-muted">
+                                    <i class="fas fa-info-circle"></i> 
+                                    Analyze a transcript first to view the prompts sent to Claude.
                                 </div>
                             </div>
                         </div>
