@@ -7,3 +7,4 @@ httpx>=0.27.0,<0.28.0
 docx
 anthropic
 anthropic
+reportlab

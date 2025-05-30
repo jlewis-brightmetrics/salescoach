@@ -304,7 +304,12 @@
                                     </div>
                                     
                                     <div class="analysis-section">
-                                        <h3><i class="fas fa-comments"></i> Annotated Transcript</h3>
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h3><i class="fas fa-comments"></i> Annotated Transcript</h3>
+                                            <button class="btn btn-outline-primary" id="exportPdfBtn" style="display: none;">
+                                                <i class="fas fa-file-pdf"></i> Export as PDF Report
+                                            </button>
+                                        </div>
                                         <div id="annotatedContent" class="annotated-transcript"></div>
                                     </div>
                                 </div>
@@ -508,6 +513,9 @@
             document.getElementById('annotatedContent').innerHTML = annotatedHtml;
             document.getElementById('resultsDiv').style.display = 'block';
             
+            // Show the PDF export button
+            document.getElementById('exportPdfBtn').style.display = 'inline-block';
+            
             // Display prompts if available
             if (data.prompts) {
                 displayPrompts(data.prompts);
@@ -606,6 +614,52 @@
                     location.reload();
                 });
             }
+        });
+        
+        // PDF Export functionality
+        document.getElementById('exportPdfBtn').addEventListener('click', () => {
+            const exportBtn = document.getElementById('exportPdfBtn');
+            const originalText = exportBtn.innerHTML;
+            
+            // Show loading state
+            exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating PDF...';
+            exportBtn.disabled = true;
+            
+            fetch('/export-pdf', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => Promise.reject(err));
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                // Create download link
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = `sales_analysis_report_${new Date().toISOString().slice(0,19).replace(/[-:]/g, '')}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                showAlert('PDF report generated and downloaded successfully!', 'success');
+            })
+            .catch(error => {
+                console.error('PDF export error:', error);
+                showAlert(error.error || 'Failed to generate PDF report', 'danger');
+            })
+            .finally(() => {
+                // Restore button state
+                exportBtn.innerHTML = originalText;
+                exportBtn.disabled = false;
+            });
         });
         
         // Alert system

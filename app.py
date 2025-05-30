@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, session
+from flask import Flask, render_template, request, jsonify, session, make_response
 import anthropic
 import os
 from dotenv import load_dotenv
@@ -7,6 +7,7 @@ from werkzeug.utils import secure_filename
 import uuid
 import tempfile
 import pickle
+from pdf_generator import SalesCoachPDFGenerator
 
 # Load environment variables
 load_dotenv()
@@ -325,6 +326,38 @@ def chat():
 def clear_session():
     clear_session_data()
     return jsonify({'success': True})
+
+@app.route('/export-pdf', methods=['POST'])
+def export_pdf():
+    """Export analysis results and annotated transcript as PDF"""
+    try:
+        # Get analysis data from session
+        analysis = get_session_data('analysis')
+        annotated_transcript = get_session_data('annotated_transcript')
+        original_transcript = get_session_data('transcript')
+        
+        if not analysis or not annotated_transcript:
+            return jsonify({'error': 'No analysis data found. Please analyze a transcript first.'}), 400
+        
+        # Generate PDF
+        pdf_generator = SalesCoachPDFGenerator()
+        pdf_data = pdf_generator.generate_pdf_report(
+            analysis_content=analysis,
+            annotated_transcript=annotated_transcript,
+            transcript_original=original_transcript or ""
+        )
+        
+        # Create response with PDF data
+        response = make_response(pdf_data)
+        response.headers['Content-Type'] = 'application/pdf'
+        from datetime import datetime
+        response.headers['Content-Disposition'] = f'attachment; filename="sales_analysis_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf"'
+        
+        return response
+        
+    except Exception as e:
+        print(f"❌ Error generating PDF: {str(e)}")
+        return jsonify({'error': f'Failed to generate PDF: {str(e)}'}), 500
 
 @app.route('/health')
 def health_check():
