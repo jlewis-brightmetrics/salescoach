@@ -454,10 +454,14 @@
                 data.analysis.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
             
             // Display annotated transcript
+            console.log('📝 Received annotated transcript length:', data.annotated_transcript.length);
+            console.log('📄 Last 100 characters:', data.annotated_transcript.slice(-100));
+            
             let annotatedHtml = data.annotated_transcript
                 .replace(/\[COACH:(.*?)\]/g, '<div class="coach-annotation"><strong>Coach:</strong>$1</div>')
                 .replace(/\n/g, '<br>');
             
+            console.log('🎨 Processed HTML length:', annotatedHtml.length);
             document.getElementById('annotatedContent').innerHTML = annotatedHtml;
             document.getElementById('resultsDiv').style.display = 'block';
         }
