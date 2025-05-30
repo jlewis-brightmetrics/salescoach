@@ -1,0 +1,33 @@
+~/workspace$ git log --oneline
+d495b3e (HEAD -> main) Improve AI coaching by providing more complete and detailed transcript review
+e59422f Improve coaching annotations to provide more detailed and comprehensive feedback
+6d074f3 Increase the number of tokens used for generating feedback on sales calls
+f176c5d Improve transcript analysis by optimizing AI model token usage
+2551c88 Add more details when analysis is done, to help debug the transcript processing
+ada020a Investigate why transcript analysis is stopping prematurely
+e8a6f4f Increase the visible amount of analyzed transcript text shown to the user
+d115f5c Adjust annotation display to prevent text from being cut off
+fcb8f62 Show token usage to diagnose cut off transcript issues
+8365a1e Increase the word limit for sales call analysis and adjust the AI model
+9851a7b Adjust the maximum number of tokens to align with the latest model
+8790f93 Display the specific language model in use during transcript analysis
+362a7ad Update the sales analysis tool to use the most recent language model
+686391c Use a more powerful AI model to improve analysis of sales conversations
+4694b05 Reduce the number of tokens to prevent errors when analyzing transcripts
+c4b00c3 Use the latest and more capable language model for analyzing sales calls
+f501a74 Reduce the number of tokens used to analyze sales transcripts
+ebc6fcf Switch to a more powerful model and increase token allowance for better analysis
+d70be4a Adjust the maximum allowed tokens to prevent errors with the language model
+831fb5f Rename the application for sales data analysis to enhance clarity
+dc3560e Improve analysis of sales calls and provide more actionable recommendations
+b4e0900 Rename the application for clarity and improve compatibility
+01d81eb Improve response length and show token usage on results page
+29e3749 Improve display of analysis data with token usage information
+74ae54e Show the number of tokens used for each request and response cycle
+3c5de6e Increase the maximum length of analyzed sales conversations
+0fbc03b Increase the amount of text the analyzer can receive from the AI model
+d4af49a Deployed your application
+96cb1e7 Set up sales analysis tool for team deployment on private platform
+b141e39 Started building your app
+f6672e2 Initial commit
+~/workspace$ 
