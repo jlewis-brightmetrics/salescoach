@@ -1,228 +1,293 @@
-import streamlit as st
+from flask import Flask, render_template, request, jsonify, session
+import openai
 import os
-from sales_analyzer import SalesAnalyzer
+from dotenv import load_dotenv
+import json
+from werkzeug.utils import secure_filename
+import uuid
 import tempfile
+import pickle
 
-# Page configuration
-st.set_page_config(
-    page_title="Sales Coach - Transcript Analyzer",
-    page_icon="💼",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+# Load environment variables
+load_dotenv()
 
-# Initialize the sales analyzer
-@st.cache_resource
-def get_analyzer():
-    return SalesAnalyzer()
+app = Flask(__name__)
+app.secret_key = os.getenv('SECRET_KEY', 'salescoach-secret-key-' + str(uuid.uuid4()))
 
-def main():
-    st.title("💼 Sales Coach - Transcript Analyzer")
-    st.markdown("---")
-    
-    # Sidebar for API key configuration
-    with st.sidebar:
-        st.header("Configuration")
-        
-        # Check for API key
-        api_key = os.getenv("OPENAI_API_KEY", "")
+# Configure OpenAI
+openai.api_key = os.getenv('OPENAI_API_KEY')
+
+# Configure upload settings
+UPLOAD_FOLDER = 'uploads'
+ALLOWED_EXTENSIONS = {'txt', 'csv', 'md'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+
+# Create uploads directory if it doesn't exist
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+
+# Simple in-memory session storage to avoid large cookies
+SESSION_STORE = {}
+
+def get_session_id():
+    """Get or create a session ID"""
+    if 'session_id' not in session:
+        session['session_id'] = str(uuid.uuid4())
+    return session['session_id']
+
+def get_session_data(key, default=None):
+    """Get data from session store"""
+    session_id = get_session_id()
+    return SESSION_STORE.get(session_id, {}).get(key, default)
+
+def set_session_data(key, value):
+    """Set data in session store"""
+    session_id = get_session_id()
+    if session_id not in SESSION_STORE:
+        SESSION_STORE[session_id] = {}
+    SESSION_STORE[session_id][key] = value
+
+def clear_session_data():
+    """Clear session data"""
+    session_id = get_session_id()
+    if session_id in SESSION_STORE:
+        del SESSION_STORE[session_id]
+    session.clear()
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+class SalescoachAnalyzer:
+    def __init__(self):
+        api_key = os.getenv('OPENAI_API_KEY')
         if not api_key:
-            st.error("⚠️ OpenAI API Key not found in environment variables")
-            st.info("Please configure OPENAI_API_KEY in your environment")
-            return
-        else:
-            st.success("✅ OpenAI API Key configured")
-        
-        st.markdown("---")
-        st.header("About")
-        st.markdown("""
-        This application analyzes sales call transcripts to provide:
-        - **Key insights** and conversation summary
-        - **Customer sentiment** analysis
-        - **Objections** and concerns identification
-        - **Action items** and next steps
-        - **Performance metrics** and recommendations
-        """)
-
-    # Main content area
-    col1, col2 = st.columns([1, 1])
+            raise ValueError("OPENAI_API_KEY environment variable is required")
+        self.client = openai.OpenAI(api_key=api_key)
     
-    with col1:
-        st.header("📁 Upload Transcript")
-        
-        # File upload
-        uploaded_file = st.file_uploader(
-            "Choose a transcript file",
-            type=['txt', 'doc', 'docx', 'pdf'],
-            help="Upload your sales call transcript in TXT, DOC, DOCX, or PDF format"
-        )
-        
-        # Text input as alternative
-        st.markdown("**Or paste transcript directly:**")
-        transcript_text = st.text_area(
-            "Paste your transcript here",
-            height=300,
-            placeholder="Paste the sales call transcript here..."
-        )
-        
-        # Analysis button
-        analyze_button = st.button(
-            "🔍 Analyze Transcript",
-            type="primary",
-            use_container_width=True,
-            disabled=not (uploaded_file or transcript_text.strip())
-        )
+    def analyze_transcript(self, transcript):
+        """Analyze the sales call transcript and provide coaching feedback"""
+        prompt = f"""
+        You are an expert sales coach analyzing a sales call transcript. Please provide a comprehensive analysis with the following sections:
 
-    with col2:
-        st.header("📊 Analysis Results")
-        
-        if analyze_button:
-            try:
-                analyzer = get_analyzer()
-                
-                # Get transcript content
-                if uploaded_file:
-                    # Handle file upload
-                    with tempfile.NamedTemporaryFile(delete=False, suffix=f".{uploaded_file.name.split('.')[-1]}") as tmp_file:
-                        tmp_file.write(uploaded_file.read())
-                        tmp_file_path = tmp_file.name
-                    
-                    try:
-                        content = analyzer.extract_text_from_file(tmp_file_path)
-                    finally:
-                        os.unlink(tmp_file_path)  # Clean up temp file
-                else:
-                    content = transcript_text.strip()
-                
-                if not content:
-                    st.error("❌ No content found in the transcript")
-                    return
-                
-                # Show loading spinner
-                with st.spinner("🤖 Analyzing transcript with AI..."):
-                    analysis_result = analyzer.analyze_transcript(content)
-                
-                if analysis_result:
-                    # Display results in tabs
-                    tab1, tab2, tab3, tab4, tab5 = st.tabs([
-                        "📋 Summary", 
-                        "😊 Sentiment", 
-                        "❗ Objections", 
-                        "✅ Action Items", 
-                        "📈 Performance"
-                    ])
-                    
-                    with tab1:
-                        st.subheader("Key Insights")
-                        st.write(analysis_result.get('summary', 'No summary available'))
-                        
-                        st.subheader("Main Topics Discussed")
-                        topics = analysis_result.get('topics', [])
-                        if topics:
-                            for i, topic in enumerate(topics, 1):
-                                st.write(f"{i}. {topic}")
-                        else:
-                            st.write("No specific topics identified")
-                    
-                    with tab2:
-                        sentiment = analysis_result.get('sentiment', {})
-                        
-                        col_sent1, col_sent2 = st.columns(2)
-                        with col_sent1:
-                            st.metric(
-                                "Overall Sentiment",
-                                sentiment.get('overall', 'Neutral'),
-                                help="Customer's overall sentiment during the call"
-                            )
-                        
-                        with col_sent2:
-                            confidence = sentiment.get('confidence', 0.5)
-                            st.metric(
-                                "Confidence Score",
-                                f"{confidence:.1%}",
-                                help="AI confidence in sentiment analysis"
-                            )
-                        
-                        st.subheader("Sentiment Analysis")
-                        st.write(sentiment.get('explanation', 'No detailed sentiment analysis available'))
-                    
-                    with tab3:
-                        objections = analysis_result.get('objections', [])
-                        
-                        if objections:
-                            st.subheader("Identified Objections")
-                            for i, objection in enumerate(objections, 1):
-                                with st.expander(f"Objection {i}: {objection.get('type', 'Unknown')}"):
-                                    st.write("**Customer Concern:**")
-                                    st.write(objection.get('concern', 'No details available'))
-                                    st.write("**Suggested Response:**")
-                                    st.write(objection.get('response', 'No response suggested'))
-                        else:
-                            st.info("✅ No major objections identified in this transcript")
-                    
-                    with tab4:
-                        action_items = analysis_result.get('action_items', [])
-                        
-                        if action_items:
-                            st.subheader("Next Steps")
-                            for i, action in enumerate(action_items, 1):
-                                st.write(f"**{i}. {action.get('task', 'Unknown task')}**")
-                                st.write(f"   - Priority: {action.get('priority', 'Medium')}")
-                                st.write(f"   - Timeline: {action.get('timeline', 'Not specified')}")
-                                st.write("")
-                        else:
-                            st.info("No specific action items identified")
-                    
-                    with tab5:
-                        performance = analysis_result.get('performance', {})
-                        
-                        # Performance metrics
-                        col_perf1, col_perf2, col_perf3 = st.columns(3)
-                        
-                        with col_perf1:
-                            st.metric(
-                                "Talk Ratio",
-                                performance.get('talk_ratio', 'Unknown'),
-                                help="Sales rep vs customer talk time"
-                            )
-                        
-                        with col_perf2:
-                            st.metric(
-                                "Question Quality",
-                                performance.get('question_quality', 'Unknown'),
-                                help="Quality of questions asked"
-                            )
-                        
-                        with col_perf3:
-                            st.metric(
-                                "Overall Score",
-                                performance.get('overall_score', 'Unknown'),
-                                help="Overall call performance rating"
-                            )
-                        
-                        st.subheader("Performance Insights")
-                        st.write(performance.get('insights', 'No performance insights available'))
-                        
-                        st.subheader("Recommendations")
-                        recommendations = performance.get('recommendations', [])
-                        if recommendations:
-                            for rec in recommendations:
-                                st.write(f"• {rec}")
-                        else:
-                            st.write("No specific recommendations available")
-                
-                else:
-                    st.error("❌ Failed to analyze transcript. Please try again.")
-                    
-            except Exception as e:
-                st.error(f"❌ Error analyzing transcript: {str(e)}")
-                st.info("Please check your transcript content and try again.")
-        
-        elif not (uploaded_file or transcript_text.strip()):
-            st.info("👆 Upload a file or paste transcript text to begin analysis")
-        
-        else:
-            st.info("👆 Click 'Analyze Transcript' to start the analysis")
+        1. **Overall Performance Summary**: Brief overview of how the call went
+        2. **What the Representative Did Well**: Specific positive behaviors and techniques
+        3. **Areas for Improvement**: Specific areas where the rep could improve
+        4. **Key Coaching Points**: 3-5 actionable recommendations
+        5. **Call Outcome Assessment**: Likely success/next steps
 
-if __name__ == "__main__":
-    main()
+        Here's the transcript to analyze:
+
+        {transcript}
+
+        Please provide detailed, actionable feedback that would help this sales representative improve their performance.
+        """
+        
+        try:
+            response = self.client.chat.completions.create(
+                model="gpt-4-1106-preview",
+                messages=[
+                    {"role": "system", "content": "You are an expert sales coach with 20+ years of experience training top sales representatives."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=1500,
+                temperature=0.7
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            return f"Error analyzing transcript: {str(e)}"
+    
+    def annotate_transcript(self, transcript):
+        """Add coaching annotations throughout the transcript"""
+        prompt = f"""
+        Please review this sales call transcript and add coaching annotations throughout. 
+        Format your response as the original transcript with coaching notes in [COACH: ...] format inserted at relevant points.
+        
+        Focus on:
+        - Missed opportunities
+        - Good techniques used
+        - Questions that could be improved
+        - Objection handling
+        - Closing opportunities
+        - Rapport building moments
+        
+        Transcript:
+        {transcript}
+        
+        Return the transcript with coaching annotations inserted at appropriate points.
+        """
+        
+        try:
+            response = self.client.chat.completions.create(
+                model="gpt-4-1106-preview",
+                messages=[
+                    {"role": "system", "content": "You are a sales coach providing inline feedback on a sales call transcript."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=2000,
+                temperature=0.7
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            return f"Error annotating transcript: {str(e)}"
+    
+    def chat_about_analysis(self, question, transcript, previous_analysis):
+        """Handle conversational questions about the transcript or analysis"""
+        prompt = f"""
+        You are a sales coach discussing a sales call transcript analysis. The user has a question about either the transcript or the coaching analysis.
+        
+        Original Transcript:
+        {transcript}
+        
+        Previous Analysis:
+        {previous_analysis}
+        
+        User Question: {question}
+        
+        Please provide a helpful, detailed response based on the transcript and analysis.
+        """
+        
+        try:
+            response = self.client.chat.completions.create(
+                model="gpt-4-1106-preview",
+                messages=[
+                    {"role": "system", "content": "You are an expert sales coach answering questions about a sales call analysis."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=800,
+                temperature=0.7
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            return f"Error processing question: {str(e)}"
+
+# Initialize the analyzer (with error handling)
+try:
+    analyzer = SalescoachAnalyzer()
+    print("✅ Salescoach initialized successfully with OpenAI API")
+except ValueError as e:
+    print(f"❌ Configuration Error: {e}")
+    analyzer = None
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/analyze', methods=['POST'])
+def analyze():
+    try:
+        if not analyzer:
+            return jsonify({'error': 'OpenAI API key not configured. Please set OPENAI_API_KEY environment variable.'}), 500
+            
+        data = request.get_json()
+        transcript = data.get('transcript', '').strip()
+        
+        if not transcript:
+            return jsonify({'error': 'No transcript provided'}), 400
+        
+        # Check transcript length and truncate if too long
+        max_length = 8000  # Approximate character limit to stay under token limits
+        if len(transcript) > max_length:
+            transcript = transcript[:max_length] + "\n\n[Note: Transcript truncated due to length]"
+        
+        # Store transcript in session store (not browser cookies)
+        set_session_data('transcript', transcript)
+        
+        # Analyze the transcript
+        print("🔄 Analyzing transcript...")
+        analysis = analyzer.analyze_transcript(transcript)
+        annotated_transcript = analyzer.annotate_transcript(transcript)
+        
+        # Store analysis in session store
+        set_session_data('analysis', analysis)
+        set_session_data('annotated_transcript', annotated_transcript)
+        
+        print("✅ Analysis completed successfully")
+        
+        return jsonify({
+            'analysis': analysis,
+            'annotated_transcript': annotated_transcript
+        })
+    
+    except Exception as e:
+        print(f"❌ Error in analyze: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    try:
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file provided'}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'No file selected'}), 400
+        
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            # Add unique identifier to filename
+            unique_filename = f"{uuid.uuid4()}_{filename}"
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+            file.save(filepath)
+            
+            # Read the file content
+            with open(filepath, 'r', encoding='utf-8') as f:
+                transcript = f.read()
+            
+            # Clean up the uploaded file
+            os.remove(filepath)
+            
+            return jsonify({'transcript': transcript})
+        
+        return jsonify({'error': 'Invalid file type. Please upload .txt, .csv, or .md files'}), 400
+    
+    except Exception as e:
+        print(f"❌ Error in upload: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/chat', methods=['POST'])
+def chat():
+    try:
+        if not analyzer:
+            return jsonify({'error': 'OpenAI API key not configured. Please set OPENAI_API_KEY environment variable.'}), 500
+            
+        data = request.get_json()
+        question = data.get('question', '').strip()
+        
+        if not question:
+            return jsonify({'error': 'No question provided'}), 400
+        
+        transcript = get_session_data('transcript', '')
+        analysis = get_session_data('analysis', '')
+        
+        if not transcript or not analysis:
+            return jsonify({'error': 'No previous analysis found. Please analyze a transcript first.'}), 400
+        
+        print(f"🔄 Processing chat question: {question[:50]}...")
+        response = analyzer.chat_about_analysis(question, transcript, analysis)
+        
+        return jsonify({'response': response})
+    
+    except Exception as e:
+        print(f"❌ Error in chat: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/clear', methods=['POST'])
+def clear_session():
+    clear_session_data()
+    return jsonify({'success': True})
+
+@app.route('/health')
+def health_check():
+    """Health check endpoint for Replit"""
+    return jsonify({
+        'status': 'healthy',
+        'analyzer_ready': analyzer is not None,
+        'api_configured': bool(os.getenv('OPENAI_API_KEY'))
+    })
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    debug = os.environ.get('FLASK_ENV') == 'development'
+    print(f"🚀 Starting Salescoach on port {port}")
+    app.run(host='0.0.0.0', port=port, debug=debug) 

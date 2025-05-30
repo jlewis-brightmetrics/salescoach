@@ -3,10 +3,6 @@ modules = ["python-3.11"]
 [nix]
 channel = "stable-24_05"
 
-[deployment]
-deploymentTarget = "autoscale"
-run = ["streamlit", "run", "app.py", "--server.port", "5000"]
-
 [workflows]
 runButton = "Project"
 
@@ -17,17 +13,36 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Streamlit App"
-
-[[workflows.workflow]]
-name = "Streamlit App"
-author = "agent"
+args = "Start Salescoach"
 
 [[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "streamlit run app.py --server.port 5000"
-waitForPort = 5000
+task = "workflow.preview"
+args = "8080"
+
+[workflows.workflow.metadata]
+agentRequireRestartOnSave = false
+
+[deployment]
+run = ["python", "main.py"]
+deploymentTarget = "cloudrun"
+
+[gitHubImport]
+requiredFiles = [".replit", "replit.nix", "requirements.txt"]
+
+[languageServer]
+start = "pylsp"
+
+[env]
+PYTHONPATH = "${REPL_HOME}"
+FLASK_ENV = "production"
+
+[unitTest]
+language = "python3" 
 
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 8080
+externalPort = 8080

@@ -1,0 +1,57 @@
+Sales Call Transcript - ABC Software Demo
+Date: March 15, 2024
+Participants: Sarah (Sales Rep), Mike (Prospect - IT Director)
+
+Sarah: Hi Mike, thanks for taking the time to speak with me today. I know you're busy, so I really appreciate the 30 minutes. How has your week been going?
+
+Mike: Hey Sarah, no problem. Week's been crazy as usual. We're dealing with some system integration issues, but that's why I wanted to talk.
+
+Sarah: I can imagine. Before we dive into the demo, I wanted to quickly understand what's driving you to look at new solutions right now?
+
+Mike: Well, our current system is about 5 years old and we're having performance issues. Plus, my team spends way too much time on manual processes that should be automated.
+
+Sarah: That sounds frustrating. How much time would you say your team is spending on these manual processes each week?
+
+Mike: Probably 15-20 hours across the team. It's killing our productivity.
+
+Sarah: Wow, that's significant. And what's the impact on your ability to deliver projects on time?
+
+Mike: We've had to push back three major deliverables this quarter because of it.
+
+Sarah: I see. Well, let me show you how ABC Software can help. Our platform is designed specifically for teams like yours. 
+
+[Sarah proceeds with a 15-minute screen share demo]
+
+Sarah: So as you can see, this would automate about 80% of those manual processes you mentioned. What are your thoughts so far?
+
+Mike: It looks interesting, but I'm concerned about the integration with our existing systems. We use a pretty complex tech stack.
+
+Sarah: That's a great question. We have pre-built connectors for over 200 systems. What are the main ones you're using?
+
+Mike: Primarily Salesforce, ServiceNow, and some custom internal tools.
+
+Sarah: Perfect! We have native integrations for both Salesforce and ServiceNow. For the custom tools, we have a robust API that can handle most integrations. Our implementation team would work with yours to ensure everything connects smoothly.
+
+Mike: Okay, that helps. What about pricing?
+
+Sarah: Our pricing is based on the number of users and features you need. For a team your size, we're typically looking at around $15,000 annually. But I'd love to put together a custom proposal based on your specific needs.
+
+Mike: That seems reasonable. What would the next steps be?
+
+Sarah: Great question! I'd love to schedule a follow-up call with our technical team to do a deeper dive into your specific integration requirements. Would next Tuesday work for you?
+
+Mike: Let me check my calendar... Actually, I'm traveling next week. Could we do the week after?
+
+Sarah: Absolutely! How about March 28th at 2 PM?
+
+Mike: That works. Should I have my technical lead join?
+
+Sarah: That would be perfect. I'll send you a calendar invite with all the details and some prep materials to review beforehand.
+
+Mike: Sounds good. Looking forward to it.
+
+Sarah: Excellent! Thanks again for your time today, Mike. I'll get that invite out within the hour.
+
+Mike: Great, talk to you soon.
+
+[Call ends] 
