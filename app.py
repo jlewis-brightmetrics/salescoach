@@ -132,6 +132,7 @@ class SalescoachAnalyzer:
         """
         
         try:
+            print(f"🔄 Annotating transcript with model: gpt-4-0125-preview, max_tokens: 4096")
             response = self.client.chat.completions.create(
                 model="gpt-4-0125-preview",
                 messages=[
@@ -141,7 +142,10 @@ class SalescoachAnalyzer:
                 max_tokens=4096,
                 temperature=0.7
             )
-            return response.choices[0].message.content
+            print(f"📊 Annotation tokens - Input: {response.usage.prompt_tokens}, Output: {response.usage.completion_tokens}, Total: {response.usage.total_tokens}")
+            result = response.choices[0].message.content
+            print(f"📝 Annotation result length: {len(result)} characters")
+            return result
         except Exception as e:
             return f"Error annotating transcript: {str(e)}"
     
