@@ -322,6 +322,25 @@ def chat():
         print(f"❌ Error in chat: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/update-analysis', methods=['POST'])
+def update_analysis():
+    """Update the analysis results in session"""
+    try:
+        data = request.get_json()
+        updated_analysis = data.get('analysis', '').strip()
+        
+        if not updated_analysis:
+            return jsonify({'error': 'No analysis content provided'}), 400
+        
+        # Update analysis in session store
+        set_session_data('analysis', updated_analysis)
+        
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        print(f"❌ Error updating analysis: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/clear', methods=['POST'])
 def clear_session():
     clear_session_data()

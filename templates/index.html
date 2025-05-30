@@ -270,7 +270,20 @@
                                 
                                 <div id="resultsDiv" style="display: none;">
                                     <div class="analysis-section">
-                                        <h3><i class="fas fa-chart-bar"></i> Analysis Results</h3>
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h3><i class="fas fa-chart-bar"></i> Analysis Results</h3>
+                                            <div>
+                                                <button class="btn btn-outline-secondary btn-sm" id="editAnalysisBtn" style="display: none;">
+                                                    <i class="fas fa-edit"></i> Edit
+                                                </button>
+                                                <button class="btn btn-outline-success btn-sm" id="saveAnalysisBtn" style="display: none;">
+                                                    <i class="fas fa-save"></i> Save Changes
+                                                </button>
+                                                <button class="btn btn-outline-danger btn-sm" id="cancelAnalysisBtn" style="display: none;">
+                                                    <i class="fas fa-times"></i> Cancel
+                                                </button>
+                                            </div>
+                                        </div>
                                         <div id="tokenUsage" class="mb-3" style="display: none;">
                                             <div class="row">
                                                 <div class="col-md-3">
@@ -301,6 +314,7 @@
                                             <hr>
                                         </div>
                                         <div id="analysisContent"></div>
+                                        <textarea id="analysisEditor" class="form-control" rows="20" style="display: none;" placeholder="Edit your analysis results here..."></textarea>
                                     </div>
                                     
                                     <div class="analysis-section">
@@ -513,8 +527,9 @@
             document.getElementById('annotatedContent').innerHTML = annotatedHtml;
             document.getElementById('resultsDiv').style.display = 'block';
             
-            // Show the PDF export button
+            // Show the PDF export button and edit button
             document.getElementById('exportPdfBtn').style.display = 'inline-block';
+            document.getElementById('editAnalysisBtn').style.display = 'inline-block';
             
             // Display prompts if available
             if (data.prompts) {
@@ -614,6 +629,91 @@
                     location.reload();
                 });
             }
+        });
+        
+        // Analysis editing functionality
+        let originalAnalysisContent = '';
+        
+        document.getElementById('editAnalysisBtn').addEventListener('click', () => {
+            const analysisContent = document.getElementById('analysisContent');
+            const analysisEditor = document.getElementById('analysisEditor');
+            
+            // Store original content
+            originalAnalysisContent = analysisContent.innerHTML;
+            
+            // Convert HTML back to plain text for editing
+            const plainText = analysisContent.innerText || analysisContent.textContent;
+            analysisEditor.value = plainText;
+            
+            // Toggle visibility
+            analysisContent.style.display = 'none';
+            analysisEditor.style.display = 'block';
+            
+            // Toggle buttons
+            document.getElementById('editAnalysisBtn').style.display = 'none';
+            document.getElementById('saveAnalysisBtn').style.display = 'inline-block';
+            document.getElementById('cancelAnalysisBtn').style.display = 'inline-block';
+        });
+        
+        document.getElementById('saveAnalysisBtn').addEventListener('click', () => {
+            const analysisContent = document.getElementById('analysisContent');
+            const analysisEditor = document.getElementById('analysisEditor');
+            
+            // Get edited content and format it
+            const editedText = analysisEditor.value;
+            const formattedHtml = editedText
+                .replace(/\n/g, '<br>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            
+            // Update the analysis content
+            analysisContent.innerHTML = formattedHtml;
+            
+            // Update session storage via API
+            fetch('/update-analysis', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ analysis: editedText })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('Analysis updated successfully!', 'success');
+                } else {
+                    showAlert('Failed to save changes', 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Save error:', error);
+                showAlert('Error saving changes', 'danger');
+            });
+            
+            // Toggle visibility
+            analysisContent.style.display = 'block';
+            analysisEditor.style.display = 'none';
+            
+            // Toggle buttons
+            document.getElementById('editAnalysisBtn').style.display = 'inline-block';
+            document.getElementById('saveAnalysisBtn').style.display = 'none';
+            document.getElementById('cancelAnalysisBtn').style.display = 'none';
+        });
+        
+        document.getElementById('cancelAnalysisBtn').addEventListener('click', () => {
+            const analysisContent = document.getElementById('analysisContent');
+            const analysisEditor = document.getElementById('analysisEditor');
+            
+            // Restore original content
+            analysisContent.innerHTML = originalAnalysisContent;
+            
+            // Toggle visibility
+            analysisContent.style.display = 'block';
+            analysisEditor.style.display = 'none';
+            
+            // Toggle buttons
+            document.getElementById('editAnalysisBtn').style.display = 'inline-block';
+            document.getElementById('saveAnalysisBtn').style.display = 'none';
+            document.getElementById('cancelAnalysisBtn').style.display = 'none';
         });
         
         // PDF Export functionality
