@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify, session
-import openai
+import anthropic
 import os
 from dotenv import load_dotenv
 import json
@@ -14,8 +14,8 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'salescoach-secret-key-' + str(uuid.uuid4()))
 
-# Configure OpenAI
-openai.api_key = os.getenv('OPENAI_API_KEY')
+# Configure Anthropic
+anthropic_api_key = os.getenv('ANTHROPIC_API_KEY')
 
 # Configure upload settings
 UPLOAD_FOLDER = 'uploads'
@@ -60,10 +60,11 @@ def allowed_file(filename):
 
 class SalescoachAnalyzer:
     def __init__(self):
-        api_key = os.getenv('OPENAI_API_KEY')
+        api_key = os.getenv('ANTHROPIC_API_KEY')
         if not api_key:
-            raise ValueError("OPENAI_API_KEY environment variable is required")
-        self.client = openai.OpenAI(api_key=api_key)
+            raise ValueError("ANTHROPIC_API_KEY environment variable is required")
+        # the newest Anthropic model is "claude-3-5-sonnet-20241022" which was released October 22, 2024
+        self.client = anthropic.Anthropic(api_key=api_key)
     
     def analyze_transcript(self, transcript):
         """Analyze the sales call transcript and provide coaching feedback"""
@@ -84,27 +85,28 @@ class SalescoachAnalyzer:
         """
         
         try:
-            model_name = "gpt-4-0125-preview"
-            print(f"🤖 Using model: {model_name} with max_tokens: 4096")
+            # the newest Anthropic model is "claude-3-5-sonnet-20241022" which was released October 22, 2024
+            model_name = "claude-3-5-sonnet-20241022"
+            print(f"🤖 Using model: {model_name} with max_tokens: 10000")
             
-            response = self.client.chat.completions.create(
+            message = self.client.messages.create(
                 model=model_name,
+                max_tokens=10000,
+                temperature=0.7,
+                system="You are an expert sales coach with 20+ years of experience training top sales representatives.",
                 messages=[
-                    {"role": "system", "content": "You are an expert sales coach with 20+ years of experience training top sales representatives."},
                     {"role": "user", "content": prompt}
-                ],
-                max_tokens=4096,
-                temperature=0.7
+                ]
             )
             
             # Create result with token usage
             result = {
-                'content': response.choices[0].message.content,
+                'content': message.content[0].text,
                 'token_usage': {
-                    'input_tokens': response.usage.prompt_tokens,
-                    'output_tokens': response.usage.completion_tokens,
-                    'total_tokens': response.usage.total_tokens,
-                    'max_tokens_limit': 4096
+                    'input_tokens': message.usage.input_tokens,
+                    'output_tokens': message.usage.output_tokens,
+                    'total_tokens': message.usage.input_tokens + message.usage.output_tokens,
+                    'max_tokens_limit': 10000
                 }
             }
             return result
@@ -135,18 +137,19 @@ class SalescoachAnalyzer:
         """
         
         try:
-            print(f"🔄 Annotating transcript with model: gpt-4-0125-preview, max_tokens: 4096")
-            response = self.client.chat.completions.create(
-                model="gpt-4-0125-preview",
+            # the newest Anthropic model is "claude-3-5-sonnet-20241022" which was released October 22, 2024
+            print(f"🔄 Annotating transcript with model: claude-3-5-sonnet-20241022, max_tokens: 10000")
+            message = self.client.messages.create(
+                model="claude-3-5-sonnet-20241022",
+                max_tokens=10000,
+                temperature=0.7,
+                system="You are a sales coach providing inline feedback on a sales call transcript.",
                 messages=[
-                    {"role": "system", "content": "You are a sales coach providing inline feedback on a sales call transcript."},
                     {"role": "user", "content": prompt}
-                ],
-                max_tokens=4096,
-                temperature=0.7
+                ]
             )
-            print(f"📊 Annotation tokens - Input: {response.usage.prompt_tokens}, Output: {response.usage.completion_tokens}, Total: {response.usage.total_tokens}")
-            result = response.choices[0].message.content
+            print(f"📊 Annotation tokens - Input: {message.usage.input_tokens}, Output: {message.usage.output_tokens}, Total: {message.usage.input_tokens + message.usage.output_tokens}")
+            result = message.content[0].text
             print(f"📝 Annotation result length: {len(result)} characters")
             return result
         except Exception as e:
@@ -169,23 +172,24 @@ class SalescoachAnalyzer:
         """
         
         try:
-            response = self.client.chat.completions.create(
-                model="gpt-4-0125-preview",
+            # the newest Anthropic model is "claude-3-5-sonnet-20241022" which was released October 22, 2024
+            message = self.client.messages.create(
+                model="claude-3-5-sonnet-20241022",
+                max_tokens=10000,
+                temperature=0.7,
+                system="You are an expert sales coach answering questions about a sales call analysis.",
                 messages=[
-                    {"role": "system", "content": "You are an expert sales coach answering questions about a sales call analysis."},
                     {"role": "user", "content": prompt}
-                ],
-                max_tokens=4096,
-                temperature=0.7
+                ]
             )
-            return response.choices[0].message.content
+            return message.content[0].text
         except Exception as e:
             return f"Error processing question: {str(e)}"
 
 # Initialize the analyzer (with error handling)
 try:
     analyzer = SalescoachAnalyzer()
-    print("✅ Salescoach initialized successfully with OpenAI API")
+    print("✅ Salescoach initialized successfully with Claude API")
 except ValueError as e:
     print(f"❌ Configuration Error: {e}")
     analyzer = None
