@@ -84,8 +84,11 @@ class SalescoachAnalyzer:
         """
         
         try:
+            model_name = "gpt-4-0125-preview"
+            print(f"🤖 Using model: {model_name} with max_tokens: 10000")
+            
             response = self.client.chat.completions.create(
-                model="gpt-4-0125-preview",
+                model=model_name,
                 messages=[
                     {"role": "system", "content": "You are an expert sales coach with 20+ years of experience training top sales representatives."},
                     {"role": "user", "content": prompt}
