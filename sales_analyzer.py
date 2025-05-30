@@ -85,6 +85,16 @@ Respond with valid JSON only."""
             )
             
             result = json.loads(response.choices[0].message.content)
+            
+            # Add token usage information to the result
+            if hasattr(response, 'usage') and response.usage:
+                result['token_usage'] = {
+                    'input_tokens': response.usage.prompt_tokens,
+                    'output_tokens': response.usage.completion_tokens,
+                    'total_tokens': response.usage.total_tokens,
+                    'max_tokens_limit': 10000
+                }
+            
             return result
             
         except json.JSONDecodeError as e:
