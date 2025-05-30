@@ -14,7 +14,7 @@ class SalesAnalyzer:
             raise ValueError("OpenAI API key not found in environment variables")
         
         self.client = OpenAI(api_key=api_key)
-        self.model = "gpt-4-1106-preview"
+        self.model = "gpt-4-turbo"
     
     def extract_text_from_file(self, file_path: str) -> str:
         """Extract text content from uploaded files."""
