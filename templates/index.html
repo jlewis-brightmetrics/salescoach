@@ -507,6 +507,18 @@
             console.log('🎨 Processed HTML length:', annotatedHtml.length);
             document.getElementById('annotatedContent').innerHTML = annotatedHtml;
             document.getElementById('resultsDiv').style.display = 'block';
+            
+            // Display prompts if available
+            if (data.prompts) {
+                displayPrompts(data.prompts);
+            }
+        }
+        
+        function displayPrompts(prompts) {
+            document.getElementById('analysisPrompt').textContent = prompts.analysis;
+            document.getElementById('annotationPrompt').textContent = prompts.annotation;
+            document.getElementById('promptContent').style.display = 'block';
+            document.getElementById('noPromptsMessage').style.display = 'none';
         }
         
         // Chat handling
@@ -560,6 +572,11 @@
                     addChatMessage('Error: ' + data.error, 'assistant');
                 } else {
                     addChatMessage(data.response, 'assistant');
+                    // Update chat prompt if available
+                    if (data.chat_prompt) {
+                        document.getElementById('chatPrompt').textContent = data.chat_prompt;
+                        document.getElementById('chatPromptSection').style.display = 'block';
+                    }
                 }
             })
             .catch(error => {
