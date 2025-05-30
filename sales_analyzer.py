@@ -82,7 +82,7 @@ Provide a detailed analysis with specific examples from the conversation."""
                     {"role": "user", "content": user_prompt}
                 ],
                 temperature=0.3,
-                max_tokens=10000
+                max_tokens=4096
             )
             
             content = response.choices[0].message.content
@@ -97,7 +97,7 @@ Provide a detailed analysis with specific examples from the conversation."""
                     'input_tokens': response.usage.prompt_tokens,
                     'output_tokens': response.usage.completion_tokens,
                     'total_tokens': response.usage.total_tokens,
-                    'max_tokens_limit': 10000
+                    'max_tokens_limit': 4096
                 }
             
             return result
