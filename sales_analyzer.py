@@ -81,7 +81,7 @@ Respond with valid JSON only."""
                 ],
                 response_format={"type": "json_object"},
                 temperature=0.3,
-                max_tokens=2000
+                max_tokens=4000
             )
             
             result = json.loads(response.choices[0].message.content)
@@ -143,7 +143,8 @@ Respond with valid JSON only."""
                     {"role": "user", "content": f"Analyze this transcript for objections:\n\n{transcript}"}
                 ],
                 response_format={"type": "json_object"},
-                temperature=0.3
+                temperature=0.3,
+                max_tokens=2000
             )
             
             result = json.loads(response.choices[0].message.content)
@@ -172,7 +173,8 @@ Respond with valid JSON only."""
                     {"role": "user", "content": f"Extract action items from this transcript:\n\n{transcript}"}
                 ],
                 response_format={"type": "json_object"},
-                temperature=0.3
+                temperature=0.3,
+                max_tokens=2000
             )
             
             result = json.loads(response.choices[0].message.content)
