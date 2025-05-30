@@ -229,6 +229,8 @@ def analyze():
         set_session_data('annotated_transcript', annotated_transcript)
         
         print("✅ Analysis completed successfully")
+        print(f"📤 Sending annotated transcript length: {len(annotated_transcript)} characters")
+        print(f"📄 Last 100 chars of annotated transcript: {annotated_transcript[-100:]}")
         
         return jsonify({
             'analysis': analysis_content,
