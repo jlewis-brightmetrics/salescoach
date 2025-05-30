@@ -132,14 +132,14 @@ class SalescoachAnalyzer:
         """
         
         try:
-            print(f"🔄 Annotating transcript with model: gpt-4-0125-preview, max_tokens: 3000")
+            print(f"🔄 Annotating transcript with model: gpt-4-0125-preview, max_tokens: 4096")
             response = self.client.chat.completions.create(
                 model="gpt-4-0125-preview",
                 messages=[
                     {"role": "system", "content": "You are a sales coach providing inline feedback on a sales call transcript."},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=3000,
+                max_tokens=4096,
                 temperature=0.7
             )
             print(f"📊 Annotation tokens - Input: {response.usage.prompt_tokens}, Output: {response.usage.completion_tokens}, Total: {response.usage.total_tokens}")
