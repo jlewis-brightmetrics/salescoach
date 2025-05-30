@@ -14,9 +14,7 @@ class SalesAnalyzer:
             raise ValueError("OpenAI API key not found in environment variables")
         
         self.client = OpenAI(api_key=api_key)
-        # the newest OpenAI model is "gpt-4o" which was released May 13, 2024.
-        # do not change this unless explicitly requested by the user
-        self.model = "gpt-4o"
+        self.model = "gpt-4-1106-preview"
     
     def extract_text_from_file(self, file_path: str) -> str:
         """Extract text content from uploaded files."""
@@ -82,7 +80,7 @@ Provide a detailed analysis with specific examples from the conversation."""
                     {"role": "user", "content": user_prompt}
                 ],
                 temperature=0.3,
-                max_tokens=4096
+                max_tokens=10000
             )
             
             content = response.choices[0].message.content
@@ -97,7 +95,7 @@ Provide a detailed analysis with specific examples from the conversation."""
                     'input_tokens': response.usage.prompt_tokens,
                     'output_tokens': response.usage.completion_tokens,
                     'total_tokens': response.usage.total_tokens,
-                    'max_tokens_limit': 4096
+                    'max_tokens_limit': 10000
                 }
             
             return result
