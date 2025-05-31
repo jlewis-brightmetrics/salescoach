@@ -485,10 +485,16 @@
                 if (data.error) {
                     showAlert(data.error, 'danger');
                 } else {
-                    displayResults(data);
+                    // Display analysis immediately
+                    displayAnalysisOnly(data);
                     hasAnalysis = true;
                     enableChat();
-                    showAlert('Analysis completed successfully!', 'success');
+                    showAlert('Analysis completed! Processing annotation...', 'info');
+                    
+                    // If annotation is pending, fetch it separately
+                    if (data.annotation_pending) {
+                        fetchAnnotation();
+                    }
                 }
             })
             .catch(error => {
@@ -497,7 +503,7 @@
             });
         });
         
-        function displayResults(data) {
+        function displayAnalysisOnly(data) {
             // Display token usage if available
             if (data.token_usage && Object.keys(data.token_usage).length > 0) {
                 const usage = data.token_usage;
@@ -515,21 +521,71 @@
             document.getElementById('analysisContent').innerHTML = 
                 data.analysis.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
             
-            // Display annotated transcript
-            console.log('📝 Received annotated transcript length:', data.annotated_transcript.length);
-            console.log('📄 Last 100 characters:', data.annotated_transcript.slice(-100));
+            // Show annotation loading message
+            document.getElementById('annotatedContent').innerHTML = '<div class="text-center text-muted"><i class="fas fa-spinner fa-spin"></i> Processing annotation...</div>';
             
-            let annotatedHtml = data.annotated_transcript
-                .replace(/\[COACH:(.*?)\]/g, '<div class="coach-annotation"><strong>Coach:</strong>$1</div>')
-                .replace(/\n/g, '<br>');
-            
-            console.log('🎨 Processed HTML length:', annotatedHtml.length);
-            document.getElementById('annotatedContent').innerHTML = annotatedHtml;
             document.getElementById('resultsDiv').style.display = 'block';
-            
-            // Show the PDF export button and edit button
-            document.getElementById('exportPdfBtn').style.display = 'inline-block';
             document.getElementById('editAnalysisBtn').style.display = 'inline-block';
+            
+            // Display analysis prompt if available
+            if (data.prompts && data.prompts.analysis) {
+                document.getElementById('analysisPrompt').textContent = data.prompts.analysis;
+                document.getElementById('promptContent').style.display = 'block';
+                document.getElementById('noPromptsMessage').style.display = 'none';
+            }
+        }
+
+        function fetchAnnotation() {
+            fetch('/get_annotation', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    document.getElementById('annotatedContent').innerHTML = '<div class="text-danger">Error loading annotation: ' + data.error + '</div>';
+                } else {
+                    // Display annotated transcript
+                    console.log('📝 Received annotated transcript length:', data.annotated_transcript.length);
+                    console.log('📄 Last 100 characters:', data.annotated_transcript.slice(-100));
+                    
+                    let annotatedHtml = data.annotated_transcript
+                        .replace(/\[COACH:(.*?)\]/g, '<div class="coach-annotation"><strong>Coach:</strong>$1</div>')
+                        .replace(/\n/g, '<br>');
+                    
+                    console.log('🎨 Processed HTML length:', annotatedHtml.length);
+                    document.getElementById('annotatedContent').innerHTML = annotatedHtml;
+                    
+                    // Show PDF export button now that everything is ready
+                    document.getElementById('exportPdfBtn').style.display = 'inline-block';
+                    
+                    // Update annotation prompt if available
+                    if (data.prompts && data.prompts.annotation) {
+                        document.getElementById('annotationPrompt').textContent = data.prompts.annotation;
+                    }
+                    
+                    showAlert('Annotation completed successfully!', 'success');
+                }
+            })
+            .catch(error => {
+                document.getElementById('annotatedContent').innerHTML = '<div class="text-danger">Error loading annotation: ' + error.message + '</div>';
+            });
+        }
+
+        function displayResults(data) {
+            // This function is kept for backward compatibility
+            displayAnalysisOnly(data);
+            if (data.annotated_transcript) {
+                // If we have annotation data, display it directly
+                let annotatedHtml = data.annotated_transcript
+                    .replace(/\[COACH:(.*?)\]/g, '<div class="coach-annotation"><strong>Coach:</strong>$1</div>')
+                    .replace(/\n/g, '<br>');
+                
+                document.getElementById('annotatedContent').innerHTML = annotatedHtml;
+                document.getElementById('exportPdfBtn').style.display = 'inline-block';
+            }
             
             // Display prompts if available
             if (data.prompts) {

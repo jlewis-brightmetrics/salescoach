@@ -249,10 +249,9 @@ def analyze():
         # Store transcript in session store (not browser cookies)
         set_session_data('transcript', transcript)
         
-        # Analyze the transcript
+        # Analyze the transcript first
         print("🔄 Analyzing transcript...")
         analysis_result, analysis_prompt = analyzer.analyze_transcript(transcript)
-        annotated_transcript, annotation_prompt = analyzer.annotate_transcript(transcript)
         
         # Handle the new return format with token usage
         if isinstance(analysis_result, dict) and 'content' in analysis_result:
@@ -264,22 +263,18 @@ def analyze():
         
         # Store analysis and prompts in session store
         set_session_data('analysis', analysis_content)
-        set_session_data('annotated_transcript', annotated_transcript)
         set_session_data('analysis_prompt', analysis_prompt)
-        set_session_data('annotation_prompt', annotation_prompt)
         
         print("✅ Analysis completed successfully")
-        print(f"📤 Sending annotated transcript length: {len(annotated_transcript)} characters")
-        print(f"📄 Last 100 chars of annotated transcript: {annotated_transcript[-100:]}")
         
+        # Return analysis immediately, annotation will be processed separately
         return jsonify({
             'analysis': analysis_content,
-            'annotated_transcript': annotated_transcript,
             'token_usage': token_usage,
             'prompts': {
-                'analysis': analysis_prompt,
-                'annotation': annotation_prompt
-            }
+                'analysis': analysis_prompt
+            },
+            'annotation_pending': True
         })
     
     except Exception as e:
@@ -322,6 +317,38 @@ def upload_file():
     
     except Exception as e:
         print(f"❌ Error in upload: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/get_annotation', methods=['POST'])
+def get_annotation():
+    """Process annotation separately after analysis is complete"""
+    try:
+        # Get the transcript from session
+        transcript = get_session_data('transcript')
+        if not transcript:
+            return jsonify({'error': 'No transcript found in session'}), 400
+        
+        # Process annotation
+        print("🔄 Processing annotation...")
+        annotated_transcript, annotation_prompt = analyzer.annotate_transcript(transcript)
+        
+        # Store annotation and prompt in session
+        set_session_data('annotated_transcript', annotated_transcript)
+        set_session_data('annotation_prompt', annotation_prompt)
+        
+        print("✅ Annotation completed successfully")
+        print(f"📤 Sending annotated transcript length: {len(annotated_transcript)} characters")
+        print(f"📄 Last 100 chars of annotated transcript: {annotated_transcript[-100:]}")
+        
+        return jsonify({
+            'annotated_transcript': annotated_transcript,
+            'prompts': {
+                'annotation': annotation_prompt
+            }
+        })
+    
+    except Exception as e:
+        print(f"❌ Error in get_annotation: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/chat', methods=['POST'])
