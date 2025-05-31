@@ -122,6 +122,10 @@ class SalescoachAnalyzer:
                 ]
             )
             
+            # Log token usage
+            print(f"📊 Analysis tokens - Input: {message.usage.input_tokens:,}, Output: {message.usage.output_tokens:,}, Total: {message.usage.input_tokens + message.usage.output_tokens:,}")
+            print(f"📊 Output usage: {(message.usage.output_tokens / 20000 * 100):.1f}% of max tokens")
+            
             # Create result with token usage
             result = {
                 'content': message.content[0].text,
@@ -174,7 +178,8 @@ class SalescoachAnalyzer:
                     {"role": "user", "content": prompt}
                 ]
             )
-            print(f"📊 Annotation tokens - Input: {message.usage.input_tokens}, Output: {message.usage.output_tokens}, Total: {message.usage.input_tokens + message.usage.output_tokens}")
+            print(f"📊 Annotation tokens - Input: {message.usage.input_tokens:,}, Output: {message.usage.output_tokens:,}, Total: {message.usage.input_tokens + message.usage.output_tokens:,}")
+            print(f"📊 Annotation output usage: {(message.usage.output_tokens / 20000 * 100):.1f}% of max tokens")
             result = message.content[0].text
             print(f"📝 Annotation result length: {len(result)} characters")
             return result, prompt
@@ -207,6 +212,7 @@ class SalescoachAnalyzer:
                     {"role": "user", "content": prompt}
                 ]
             )
+            print(f"📊 Chat tokens - Input: {message.usage.input_tokens:,}, Output: {message.usage.output_tokens:,}, Total: {message.usage.input_tokens + message.usage.output_tokens:,}")
             return message.content[0].text, prompt
         except Exception as e:
             return f"Error processing question: {str(e)}", prompt

@@ -14,7 +14,7 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Server"
+args = "SalesCoach"
 
 [[workflows.workflow.tasks]]
 task = "workflow.preview"
@@ -24,7 +24,7 @@ args = "8080"
 agentRequireRestartOnSave = false
 
 [[workflows.workflow]]
-name = "Server"
+name = "SalesCoach"
 author = "agent"
 
 [[workflows.workflow.tasks]]
