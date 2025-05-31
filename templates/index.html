@@ -198,6 +198,50 @@
             color: #991b1b;
             border-left: 4px solid var(--danger-color);
         }
+        
+        /* Markdown formatting styles for analysis content */
+        #analysisContent h1 {
+            color: var(--primary-color);
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin: 1.5rem 0 1rem 0;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 0.5rem;
+        }
+        
+        #analysisContent h2 {
+            color: var(--primary-color);
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 1.25rem 0 0.75rem 0;
+        }
+        
+        #analysisContent h3 {
+            color: #4b5563;
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 1rem 0 0.5rem 0;
+        }
+        
+        #analysisContent ul, #analysisContent ol {
+            margin: 0.75rem 0;
+            padding-left: 1.5rem;
+        }
+        
+        #analysisContent li {
+            margin: 0.25rem 0;
+            line-height: 1.6;
+        }
+        
+        #analysisContent p {
+            margin: 0.75rem 0;
+            line-height: 1.6;
+        }
+        
+        #analysisContent strong {
+            color: #374151;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -503,6 +547,38 @@
             });
         });
         
+        function formatMarkdown(text) {
+            return text
+                // Headers (must be processed first)
+                .replace(/^### (.*$)/gm, '<h3>$1</h3>')
+                .replace(/^## (.*$)/gm, '<h2>$1</h2>')
+                .replace(/^# (.*$)/gm, '<h1>$1</h1>')
+                // Bold text
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                // Italic text
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                // Unordered lists
+                .replace(/^\- (.*$)/gm, '<li>$1</li>')
+                .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+                // Numbered lists
+                .replace(/^\d+\. (.*$)/gm, '<li>$1</li>')
+                .replace(/(<li>.*<\/li>)/s, function(match) {
+                    // Only convert to ordered list if it doesn't already have ul tags
+                    return match.includes('<ul>') ? match : '<ol>' + match.replace(/<ul>(.*)<\/ul>/s, '$1') + '</ol>';
+                })
+                // Line breaks
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/\n/g, '<br>')
+                // Wrap in paragraphs
+                .replace(/^(.*)$/s, '<p>$1</p>')
+                // Clean up empty paragraphs and fix list formatting
+                .replace(/<p><\/p>/g, '')
+                .replace(/<p>(<[hou]l>)/g, '$1')
+                .replace(/(<\/[hou]l>)<\/p>/g, '$1')
+                .replace(/<p>(<h[1-6]>)/g, '$1')
+                .replace(/(<\/h[1-6]>)<\/p>/g, '$1');
+        }
+        
         function displayAnalysisOnly(data) {
             // Display token usage if available
             if (data.token_usage && Object.keys(data.token_usage).length > 0) {
@@ -517,9 +593,8 @@
                 document.getElementById('tokenUsage').style.display = 'block';
             }
             
-            // Display analysis
-            document.getElementById('analysisContent').innerHTML = 
-                data.analysis.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            // Display analysis with proper markdown formatting
+            document.getElementById('analysisContent').innerHTML = formatMarkdown(data.analysis);
             
             // Show annotation loading message
             document.getElementById('annotatedContent').innerHTML = '<div class="text-center text-muted"><i class="fas fa-spinner fa-spin"></i> Processing annotation...</div>';
